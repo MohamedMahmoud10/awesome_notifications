@@ -85,36 +85,51 @@ public class NotificationActionReceiver {
                             detailedCode: ExceptionCode.DETAILED_INVALID_ARGUMENTS+".notificationModel.invalid")
                 }
             }
-            else{
-                if userInfo["gcm.message_id"] == nil {
+            else {
+                print("🟡 Received notification userInfo: \(userInfo)")
+
+                // Try to get gcm.message_id or use campaign_id as a fallback
+                let messageId = userInfo["gcm.message_id"] as? String ?? userInfo["campaign_id"] as? String
+
+                if messageId == nil {
+                    print("🔴 ERROR: Missing gcm.message_id and campaign_id in userInfo")
                     throw ExceptionFactory
                         .shared
                         .createNewAwesomeException(
                             className: TAG,
                             code: ExceptionCode.CODE_INVALID_ARGUMENTS,
                             message: "The action content doesn't contain any awesome information",
-                            detailedCode: ExceptionCode.DETAILED_INVALID_ARGUMENTS + ".addNewActionEvent.jsonData")
+                            detailedCode: ExceptionCode.DETAILED_INVALID_ARGUMENTS + ".addNewActionEvent.jsonData"
+                        )
+                } else {
+                    print("🟢 Using messageId: \(messageId!)")
                 }
-                
-                let title:String? = response.notification.request.content.title
-                let body:String? = response.notification.request.content.body
-                
+
+                let title: String? = response.notification.request.content.title
+                let body: String? = response.notification.request.content.body
+
+                print("🔹 Extracted Title: \(String(describing: title))")
+                print("🔹 Extracted Body: \(String(describing: body))")
+
                 notificationModel = NotificationModel()
                 notificationModel!.content = NotificationContentModel()
                 notificationModel!.content!.id = -1
-                notificationModel!.content!.title = title
-                notificationModel!.content!.body = body
-                
+                notificationModel!.content!.title = title ?? "Default Title"
+                notificationModel!.content!.body = body ?? "No message body provided"
+
                 if StringUtils.shared.isNullOrEmpty(title) && StringUtils.shared.isNullOrEmpty(body) {
+                    print("🔴 ERROR: Both title and body are empty")
                     throw ExceptionFactory
                         .shared
                         .createNewAwesomeException(
                             className: TAG,
                             code: ExceptionCode.CODE_INVALID_ARGUMENTS,
                             message: "The action content doesn't contain any awesome information",
-                            detailedCode: ExceptionCode.DETAILED_INVALID_ARGUMENTS + ".addNewActionEvent.jsonData")
+                            detailedCode: ExceptionCode.DETAILED_INVALID_ARGUMENTS + ".addNewActionEvent.jsonData"
+                        )
                 }
             }
+
             
             if notificationModel!.content!.createdDate == nil {
                 let date:Date = response.notification.date
